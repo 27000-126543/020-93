@@ -184,6 +184,7 @@ const ScanPage: React.FC = () => {
             materialName={scannedMaterial.name}
             batchNumber={scannedMaterial.batchNumber}
             expireDate={scannedMaterial.expireDate}
+            quantity={scannedMaterial.quantity}
             onUse={handleUseMaterial}
             onReport={handleReportExpired}
           />

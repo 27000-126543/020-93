@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text, ScrollView, Input } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
@@ -21,12 +21,29 @@ const categoryOptions: { key: MaterialCategory; label: string }[] = [
 ]
 
 const BasketEditPage: React.FC = () => {
-  const { materials, addBasket, currentRoom } = useAppContext()
+  const { materials, addBasket, updateBasket, currentRoom, getBasketById } = useAppContext()
+  const [editId, setEditId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [treatmentType, setTreatmentType] = useState<TreatmentType>('implant')
   const [roomNumber, setRoomNumber] = useState(currentRoom?.roomNumber || '')
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([])
   const [activeCategory, setActiveCategory] = useState<MaterialCategory | 'all'>('all')
+
+  useEffect(() => {
+    const params = Taro.getCurrentInstance().router?.params
+    const basketId = params?.basketId
+    if (basketId) {
+      const basket = getBasketById(basketId)
+      if (basket) {
+        setEditId(basketId)
+        setName(basket.name)
+        setTreatmentType(basket.treatmentType)
+        setRoomNumber(basket.roomNumber)
+        setSelectedMaterialIds(basket.items.map(i => i.materialId))
+        console.log('[BasketEdit] 加载已有清单', { id: basketId, name: basket.name })
+      }
+    }
+  }, [getBasketById])
 
   const filteredMaterials = activeCategory === 'all'
     ? materials
@@ -55,9 +72,15 @@ const BasketEditPage: React.FC = () => {
       return
     }
 
-    addBasket(name.trim(), treatmentType, roomNumber.trim(), selectedMaterialIds)
-    Taro.showToast({ title: '创建成功', icon: 'success' })
-    console.log('[BasketEdit] 保存材料篮', { name, treatmentType, roomNumber, materialCount: selectedMaterialIds.length })
+    if (editId) {
+      updateBasket(editId, name.trim(), treatmentType, roomNumber.trim(), selectedMaterialIds)
+      Taro.showToast({ title: '清单已更新', icon: 'success' })
+      console.log('[BasketEdit] 更新材料篮', { editId, name, treatmentType, roomNumber, materialCount: selectedMaterialIds.length })
+    } else {
+      addBasket(name.trim(), treatmentType, roomNumber.trim(), selectedMaterialIds)
+      Taro.showToast({ title: '创建成功', icon: 'success' })
+      console.log('[BasketEdit] 新建材料篮', { name, treatmentType, roomNumber, materialCount: selectedMaterialIds.length })
+    }
 
     setTimeout(() => {
       Taro.navigateBack()
@@ -67,7 +90,14 @@ const BasketEditPage: React.FC = () => {
   return (
     <ScrollView className={styles.page} scrollY>
       <View className={styles.formSection}>
-        <Text className={styles.sectionTitle}>基本信息</Text>
+        <View className={styles.sectionTitleRow}>
+          <Text className={styles.sectionTitle}>
+            {editId ? '编辑清单' : '新建清单'}
+          </Text>
+          {editId && (
+            <Text className={styles.editBadge}>修改模式</Text>
+          )}
+        </View>
 
         <View className={styles.formItem}>
           <Text className={styles.formLabel}>清单名称</Text>
@@ -109,8 +139,17 @@ const BasketEditPage: React.FC = () => {
 
       <View className={styles.materialSection}>
         <View className={styles.materialHeader}>
-          <Text className={styles.sectionTitle}>添加材料</Text>
-          <Text className={styles.selectedCount}>已选 {selectedMaterialIds.length} 项</Text>
+          <Text className={styles.sectionTitle}>
+            材料项（已选 {selectedMaterialIds.length}）
+          </Text>
+          {selectedMaterialIds.length > 0 && (
+            <View
+              className={styles.clearBtn}
+              onClick={() => setSelectedMaterialIds([])}
+            >
+              <Text className={styles.clearBtnText}>清空</Text>
+            </View>
+          )}
         </View>
 
         <View className={styles.categoryBar}>
@@ -134,13 +173,21 @@ const BasketEditPage: React.FC = () => {
         <View className={styles.materialList}>
           {filteredMaterials.map(m => {
             const isSelected = selectedMaterialIds.includes(m.id)
+            const outOfStock = m.quantity <= 0
             return (
               <View
                 key={m.id}
-                className={classnames(styles.materialRow, isSelected && styles.selectedRow)}
-                onClick={() => toggleMaterial(m.id)}
+                className={classnames(
+                  styles.materialRow,
+                  isSelected && styles.selectedRow,
+                  outOfStock && styles.outOfStockRow
+                )}
+                onClick={() => !outOfStock && toggleMaterial(m.id)}
               >
-                <View className={styles.materialCheck}>
+                <View className={classnames(
+                  styles.materialCheck,
+                  outOfStock && styles.checkDisabled
+                )}>
                   {isSelected && <Text className={styles.checkIcon}>✓</Text>}
                 </View>
                 <View className={styles.materialInfo}>
@@ -148,7 +195,13 @@ const BasketEditPage: React.FC = () => {
                   <View className={styles.materialMeta}>
                     <Text className={styles.materialCode}>{m.code}</Text>
                     <Text className={styles.materialCategory}>{m.categoryName}</Text>
-                    <Text className={styles.materialStock}>库存：{m.quantity}</Text>
+                    <Text className={classnames(
+                      styles.materialStock,
+                      outOfStock && styles.stockZero
+                    )}>
+                      库存：{m.quantity}
+                      {outOfStock && '（无货）'}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -163,9 +216,9 @@ const BasketEditPage: React.FC = () => {
           onClick={selectedMaterialIds.length > 0 ? handleSave : undefined}
         >
           <Text className={styles.saveText}>
-            {selectedMaterialIds.length > 0
-              ? `保存清单（${selectedMaterialIds.length}项材料）`
-              : '请选择材料'}
+            {selectedMaterialIds.length === 0
+              ? '请选择材料'
+              : `${editId ? '保存修改' : '保存清单'}（${selectedMaterialIds.length}项材料）`}
           </Text>
         </View>
       </View>

@@ -12,6 +12,7 @@
   align-items: center;
   padding: $spacing-xl $spacing-lg;
   position: relative;
+  flex-wrap: wrap;
 }
 
 .bgAvailable {
@@ -79,6 +80,22 @@
   letter-spacing: -2rpx;
 }
 
+.stockBadge {
+  position: absolute;
+  top: $spacing-md;
+  right: $spacing-md;
+  background: $color-status-expired;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  margin-left: auto;
+}
+
+.stockBadgeText {
+  color: $color-text-white;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+}
+
 .tagAvailable {
   background: $color-tag-available-bg;
   color: $color-status-available;
@@ -130,6 +147,34 @@
   font-weight: $font-weight-medium;
 }
 
+.stockRow {
+  padding-top: $spacing-sm;
+  margin-top: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+  padding-bottom: 0;
+  border-bottom: none;
+
+  &.stockRowZero {
+    background: rgba($color-status-expired, 0.05);
+    margin-left: -$spacing-lg;
+    margin-right: -$spacing-lg;
+    padding-left: $spacing-lg;
+    padding-right: $spacing-lg;
+    margin-bottom: -$spacing-lg;
+    border-radius: 0 0 $radius-lg $radius-lg;
+  }
+}
+
+.stockValue {
+  font-size: $font-size-lg;
+  color: $color-primary;
+  font-weight: $font-weight-bold;
+
+  &.stockZero {
+    color: $color-status-expired;
+  }
+}
+
 .actionSection {
   padding: 0 $spacing-lg $spacing-lg;
 }
@@ -154,6 +199,11 @@
 
 .btnReport {
   background: linear-gradient(135deg, $color-status-expired 0%, #ff6b6b 100%);
+}
+
+.btnDisabled {
+  background: linear-gradient(135deg, #86909c 0%, #a9b1bd 100%);
+  cursor: not-allowed;
 }
 
 .btnText {

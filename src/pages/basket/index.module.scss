@@ -112,12 +112,12 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: $spacing-md;
 }
 
 .basketInfo {
   flex: 1;
   min-width: 0;
+  margin-right: $spacing-md;
 }
 
 .basketName {
@@ -152,7 +152,6 @@
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  margin-left: $spacing-md;
 }
 
 .progressText {
@@ -164,6 +163,7 @@
 .progressSub {
   font-size: $font-size-xs;
   color: $color-text-tertiary;
+  display: block;
 }
 
 .arrowIcon {
@@ -176,31 +176,41 @@
   }
 }
 
-.itemsSection {
-  margin-top: $spacing-md;
-  padding-top: $spacing-md;
-  border-top: 1rpx solid $color-divider;
-  animation: slideDown 0.25s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10rpx);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.itemsList {
+.toolbar {
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+}
+
+.toolBtn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &:active {
+    background: $color-bg-light-blue;
+    transform: scale(0.97);
+  }
+}
+
+.toolIcon {
+  font-size: $font-size-md;
+}
+
+.toolText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
 }
 
 .progressBar {
-  height: 8rpx;
+  height: 10rpx;
   background: $color-bg-page;
   border-radius: $radius-round;
   margin-top: $spacing-md;
@@ -212,6 +222,27 @@
   background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
   border-radius: $radius-round;
   transition: width 0.3s ease;
+
+  &.progressComplete {
+    background: linear-gradient(90deg, $color-status-available 0%, #3dd459 100%);
+  }
+}
+
+.itemsSection {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
 }
 
 .emptyState {
@@ -232,6 +263,7 @@
   font-size: $font-size-md;
   color: $color-text-tertiary;
   margin-bottom: $spacing-lg;
+  display: block;
 }
 
 .createBtn {

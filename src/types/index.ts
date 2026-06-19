@@ -4,6 +4,8 @@ export type MaterialCategory = 'adhesive' | 'etchant' | 'anesthetic' | 'temporar
 
 export type TreatmentType = 'implant' | 'restoration' | 'orthodontics'
 
+export type SubmissionStatus = 'pending' | 'received' | 'scrapped'
+
 export interface Material {
   id: string
   code: string
@@ -55,15 +57,16 @@ export interface Basket {
   createdAt: string
 }
 
-export interface PhotoSubmission {
-  id: string
-  materialId: string
-  materialName: string
-  batchNumber: string
-  photos: string[]
-  remark: string
-  submittedAt: string
-  submittedBy: string
+export const submissionStatusNames: Record<SubmissionStatus, string> = {
+  'pending': '待处理',
+  'received': '已接收',
+  'scrapped': '已报废'
+}
+
+export const submissionStatusColors: Record<SubmissionStatus, string> = {
+  'pending': '#ff7d00',
+  'received': '#1677ff',
+  'scrapped': '#f53f3f'
 }
 
 export const categoryNames: Record<MaterialCategory, string> = {

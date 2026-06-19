@@ -16,6 +16,11 @@
     background: $color-bg-page;
   }
 
+  &.outOfStock {
+    border: 2rpx solid rgba($color-status-expired, 0.3);
+    background: linear-gradient(90deg, rgba($color-status-expired, 0.05) 0%, $color-bg-card 30%);
+  }
+
   &:active {
     transform: scale(0.99);
   }
@@ -75,6 +80,11 @@
   flex-shrink: 0;
 }
 
+.noStockTag {
+  background: $color-tag-expired-bg;
+  color: $color-status-expired;
+}
+
 .meta {
   display: flex;
   align-items: center;
@@ -100,6 +110,20 @@
   font-size: $font-size-sm;
   color: $color-text-secondary;
   font-weight: $font-weight-semibold;
+}
+
+.stockRow {
+  margin-bottom: $spacing-xs;
+}
+
+.stockText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+
+  &.stockZero {
+    color: $color-status-expired;
+    font-weight: $font-weight-semibold;
+  }
 }
 
 .statusInfo {
@@ -132,6 +156,10 @@
 
   &.disabled {
     background: $color-text-disabled;
+  }
+
+  &.outOfStockBtn {
+    background: linear-gradient(135deg, $color-status-warning 0%, #ffa940 100%);
   }
 
   &:active {
