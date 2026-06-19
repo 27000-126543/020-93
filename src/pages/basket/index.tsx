@@ -63,6 +63,13 @@ const BasketPage: React.FC = () => {
   }
 
   const handleItemScan = useCallback((basketId: string, itemId: string, expectedCode: string) => {
+    const basket = baskets.find(b => b.id === basketId)
+    const item = basket?.items.find(i => i.id === itemId)
+    if (item && item.verifiedCount >= item.quantity) {
+      Taro.showToast({ title: '该项已核验完成', icon: 'none' })
+      return
+    }
+
     console.log('[Basket] 开始核验，期望编码', { expectedCode })
 
     Taro.scanCode({
@@ -77,7 +84,7 @@ const BasketPage: React.FC = () => {
         Taro.showToast({ title: '扫码失败，请手动输入编码', icon: 'none' })
       }
     })
-  }, [])
+  }, [baskets])
 
   const processScanResult = useCallback((scannedCode: string, basketId: string, itemId: string, expectedCode: string) => {
     const code = scannedCode.trim().toUpperCase()
@@ -111,10 +118,15 @@ const BasketPage: React.FC = () => {
     addScanHistory(material)
     const remainingDays = calculateRemainingDays(material.expireDate)
     const status = getMaterialStatus(remainingDays)
-    incrementBasketItemVerified(basketId, itemId, status, remainingDays)
 
     const basket = baskets.find(b => b.id === basketId)
     const item = basket?.items.find(i => i.id === itemId)
+    if (item && item.verifiedCount >= item.quantity) {
+      Taro.showToast({ title: '该项已核验完成', icon: 'none' })
+      return
+    }
+
+    incrementBasketItemVerified(basketId, itemId, status, remainingDays)
     addFlowRecord(
       'basket_verify' as FlowType,
       material.id,

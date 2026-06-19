@@ -204,7 +204,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...b,
         items: b.items.map(item => {
           if (item.id !== itemId) return item
-          const newVerified = item.verifiedCount + 1
+          if (item.verifiedCount >= item.quantity) return item
+          const newVerified = Math.min(item.verifiedCount + 1, item.quantity)
           const done = newVerified >= item.quantity
           return { ...item, verifiedCount: newVerified, checked: done, status, remainingDays }
         })
@@ -243,16 +244,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [materials])
 
   const updateBasket = useCallback((basketId: string, name: string, treatmentType: TreatmentType, roomNumber: string, materialIds: string[]) => {
-    const items = buildBasketItems(basketId, materialIds, materials)
     setBaskets(prev => prev.map(b => {
       if (b.id !== basketId) return b
+      const existing = b.items
+      const newItems: BasketItem[] = materialIds.map((mid, idx) => {
+        const exist = existing.find(e => e.materialId === mid)
+        if (exist) return exist
+        const mat = materials.find(m => m.id === mid)
+        const remainingDays = mat ? calculateRemainingDays(mat.expireDate) : 0
+        const status = mat ? getMaterialStatus(remainingDays) : 'available' as const
+        return {
+          id: `item-${mid}-${Date.now()}-${idx}`,
+          basketId,
+          materialId: mid,
+          materialName: mat?.name || '',
+          materialCode: mat?.code || '',
+          category: mat?.category || 'adhesive',
+          categoryName: mat?.categoryName || categoryNames['adhesive'],
+          quantity: 1,
+          verifiedCount: 0,
+          checked: false,
+          status,
+          remainingDays,
+          expireDate: mat?.expireDate || ''
+        }
+      })
       return {
         ...b,
         name,
         treatmentType,
         treatmentName: treatmentNames[treatmentType],
         roomNumber,
-        items
+        items: newItems
       }
     }))
   }, [materials])
