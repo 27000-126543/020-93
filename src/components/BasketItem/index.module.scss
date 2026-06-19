@@ -7,7 +7,7 @@
   margin-bottom: $spacing-md;
   box-shadow: $shadow-card;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: $spacing-md;
   transition: all $transition-base;
 
@@ -35,11 +35,12 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: $spacing-xs;
   transition: all $transition-base;
 
   .checked & {
-    background: $color-primary;
-    border-color: $color-primary;
+    background: $color-status-available;
+    border-color: $color-status-available;
   }
 }
 
@@ -85,6 +86,11 @@
   color: $color-status-expired;
 }
 
+.completeTag {
+  background: rgba($color-status-available, 0.1);
+  color: $color-status-available;
+}
+
 .meta {
   display: flex;
   align-items: center;
@@ -106,10 +112,51 @@
   color: $color-text-tertiary;
 }
 
-.quantity {
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
-  font-weight: $font-weight-semibold;
+.verifyRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xs;
+}
+
+.verifyLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.verifyCount {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+
+  &.verifyComplete {
+    color: $color-status-available;
+  }
+}
+
+.verifyRemaining {
+  font-size: $font-size-xs;
+  color: $color-status-warning;
+  font-weight: $font-weight-medium;
+}
+
+.verifyBar {
+  height: 8rpx;
+  background: $color-bg-page;
+  border-radius: $radius-round;
+  margin-bottom: $spacing-sm;
+  overflow: hidden;
+}
+
+.verifyFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-round;
+  transition: width 0.3s ease;
+
+  &.verifyFillComplete {
+    background: linear-gradient(90deg, $color-status-available 0%, #3dd459 100%);
+  }
 }
 
 .stockRow {
@@ -152,6 +199,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: $spacing-xs;
   transition: all $transition-base;
 
   &.disabled {

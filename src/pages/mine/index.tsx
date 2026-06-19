@@ -8,6 +8,7 @@ import type { SubmissionStatus } from '@/types'
 import { submissionStatusNames, submissionStatusColors } from '@/types'
 
 const menuItems = [
+  { icon: '📊', text: '材料流水', url: '/pages/flow/index' },
   { icon: '⚙️', text: '设置' },
   { icon: '❓', text: '使用帮助' },
   { icon: '📱', text: '关于我们' },
@@ -22,7 +23,7 @@ const statusTabs: { key: SubmissionStatus | 'all'; label: string }[] = [
 ]
 
 const MinePage: React.FC = () => {
-  const { submissions, scanHistory, updateSubmissionStatus } = useAppContext()
+  const { submissions, scanHistory, updateSubmissionStatus, replenishMaterial, materials } = useAppContext()
   const [activeStatusTab, setActiveStatusTab] = useState<SubmissionStatus | 'all'>('all')
   const [selectedSubmission, setSelectedSubmission] = useState<typeof submissions[0] | null>(null)
 
@@ -37,12 +38,15 @@ const MinePage: React.FC = () => {
     return submissions.filter(s => s.status === activeStatusTab)
   }, [submissions, activeStatusTab])
 
-  const handleMenuClick = (text: string) => {
+  const handleMenuClick = (item: typeof menuItems[0]) => {
+    if ('url' in item && item.url) {
+      Taro.navigateTo({ url: item.url })
+      return
+    }
     Taro.showToast({
-      title: `${text}功能开发中`,
+      title: `${item.text}功能开发中`,
       icon: 'none'
     })
-    console.log('[Mine] 点击菜单', { text })
   }
 
   const handleSubmissionClick = (item: typeof submissions[0]) => {
@@ -66,6 +70,27 @@ const MinePage: React.FC = () => {
           )
           setSelectedSubmission(null)
           Taro.showToast({ title: '状态已更新', icon: 'success' })
+        }
+      }
+    })
+  }
+
+  const handleReplenish = (item: typeof submissions[0]) => {
+    Taro.showModal({
+      title: '补库入库',
+      content: `材料：${item.material.name}\n当前库存：${materials.find(m => m.id === item.material.id)?.quantity || 0}\n\n请输入补库数量（默认1）`,
+      editable: true,
+      placeholderText: '1',
+      success: (res) => {
+        if (res.confirm) {
+          const qty = parseInt(res.content || '1', 10)
+          if (isNaN(qty) || qty <= 0) {
+            Taro.showToast({ title: '请输入有效数量', icon: 'none' })
+            return
+          }
+          replenishMaterial(item.id, qty)
+          setSelectedSubmission(null)
+          Taro.showToast({ title: `已补库 ${qty} 件`, icon: 'success' })
         }
       }
     })
@@ -213,7 +238,7 @@ const MinePage: React.FC = () => {
               <View
                 key={index}
                 className={styles.menuItem}
-                onClick={() => handleMenuClick(item.text)}
+                onClick={() => handleMenuClick(item)}
               >
                 <View className={styles.menuLeft}>
                   <Text className={styles.menuIcon}>{item.icon}</Text>
@@ -283,6 +308,18 @@ const MinePage: React.FC = () => {
                     <Text className={styles.detailValue}>{item.handledAt}</Text>
                   </View>
                 )}
+                {item.replenishedQty > 0 && (
+                  <View className={styles.detailRow}>
+                    <Text className={styles.detailLabel}>补库数量</Text>
+                    <Text className={styles.detailValue}>{item.replenishedQty} 件</Text>
+                  </View>
+                )}
+                {item.replenishedQty > 0 && item.replenishedAt && (
+                  <View className={styles.detailRow}>
+                    <Text className={styles.detailLabel}>补库时间</Text>
+                    <Text className={styles.detailValue}>{item.replenishedAt}</Text>
+                  </View>
+                )}
 
                 {item.photos.length > 0 && (
                   <View className={styles.detailPhotos}>
@@ -321,10 +358,26 @@ const MinePage: React.FC = () => {
               {item.status === 'received' && (
                 <View className={styles.modalActions}>
                   <View
+                    className={classnames(styles.actionBtn, styles.actionReplenish)}
+                    onClick={() => handleReplenish(item)}
+                  >
+                    <Text className={styles.actionBtnText}>补库入库</Text>
+                  </View>
+                  <View
                     className={classnames(styles.actionBtn, styles.actionScrap)}
                     onClick={() => handleStatusChange(item, 'scrapped')}
                   >
                     <Text className={styles.actionBtnText}>确认报废</Text>
+                  </View>
+                </View>
+              )}
+              {item.status === 'scrapped' && (
+                <View className={styles.modalActions}>
+                  <View
+                    className={classnames(styles.actionBtn, styles.actionReplenish)}
+                    onClick={() => handleReplenish(item)}
+                  >
+                    <Text className={styles.actionBtnText}>补库入库</Text>
                   </View>
                 </View>
               )}

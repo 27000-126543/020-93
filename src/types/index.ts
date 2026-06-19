@@ -6,6 +6,8 @@ export type TreatmentType = 'implant' | 'restoration' | 'orthodontics'
 
 export type SubmissionStatus = 'pending' | 'received' | 'scrapped'
 
+export type FlowType = 'scan_use' | 'basket_verify' | 'expired_submit' | 'warehouse_process' | 'replenish'
+
 export interface Material {
   id: string
   code: string
@@ -41,6 +43,7 @@ export interface BasketItem {
   category: MaterialCategory
   categoryName: string
   quantity: number
+  verifiedCount: number
   checked: boolean
   status?: MaterialStatus
   remainingDays?: number
@@ -55,6 +58,44 @@ export interface Basket {
   roomNumber: string
   items: BasketItem[]
   createdAt: string
+}
+
+export interface FlowRecord {
+  id: string
+  type: FlowType
+  materialId: string
+  materialName: string
+  materialCode: string
+  quantity: number
+  remark: string
+  createdAt: string
+  basketName?: string
+  batchNumber?: string
+  operator?: string
+}
+
+export const flowTypeNames: Record<FlowType, string> = {
+  'scan_use': '扫码扣减',
+  'basket_verify': '篮核验',
+  'expired_submit': '过期提交',
+  'warehouse_process': '库房处理',
+  'replenish': '补库入库'
+}
+
+export const flowTypeColors: Record<FlowType, string> = {
+  'scan_use': '#1677ff',
+  'basket_verify': '#722ed1',
+  'expired_submit': '#f53f3f',
+  'warehouse_process': '#ff7d00',
+  'replenish': '#00b42a'
+}
+
+export const flowTypeIcons: Record<FlowType, string> = {
+  'scan_use': '📊',
+  'basket_verify': '✅',
+  'expired_submit': '⚠️',
+  'warehouse_process': '🏭',
+  'replenish': '📦'
 }
 
 export const submissionStatusNames: Record<SubmissionStatus, string> = {

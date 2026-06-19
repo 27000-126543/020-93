@@ -527,6 +527,10 @@
   background: linear-gradient(135deg, $color-status-expired 0%, #ff6b6b 100%);
 }
 
+.actionReplenish {
+  background: linear-gradient(135deg, #00b42a 0%, #23c343 100%);
+}
+
 .actionBtnText {
   color: $color-text-white;
   font-size: $font-size-md;

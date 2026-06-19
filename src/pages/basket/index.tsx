@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView } from '@tarojs/components'
+import { View, Text, ScrollView, Input } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useAppContext } from '@/store/app.context'
-import type { TreatmentType, Material } from '@/types'
+import type { TreatmentType, FlowType } from '@/types'
 import { treatmentNames } from '@/types'
 import { calculateRemainingDays, getMaterialStatus } from '@/utils/date'
 import BasketItemComponent from '@/components/BasketItem'
@@ -21,13 +21,16 @@ const BasketPage: React.FC = () => {
     baskets,
     materials,
     updateBasketItemChecked,
-    updateBasketItemStatus,
+    incrementBasketItemVerified,
     addScanHistory,
-    getMaterialByCode
+    getMaterialByCode,
+    addFlowRecord
   } = useAppContext()
 
   const [activeTab, setActiveTab] = useState<TreatmentType | 'all'>('all')
   const [expandedBasketId, setExpandedBasketId] = useState<string | null>(null)
+  const [manualVerifyItem, setManualVerifyItem] = useState<{ basketId: string; itemId: string; expectedCode: string } | null>(null)
+  const [manualCode, setManualCode] = useState('')
 
   const filteredBaskets = activeTab === 'all'
     ? baskets
@@ -47,6 +50,18 @@ const BasketPage: React.FC = () => {
     Taro.navigateTo({ url: `/pages/basket-edit/index?basketId=${basketId}` })
   }
 
+  const handleManualSubmit = () => {
+    if (!manualVerifyItem) return
+    const code = manualCode.trim()
+    if (!code) {
+      Taro.showToast({ title: '请输入材料编码', icon: 'none' })
+      return
+    }
+    processScanResult(code, manualVerifyItem.basketId, manualVerifyItem.itemId, manualVerifyItem.expectedCode)
+    setManualVerifyItem(null)
+    setManualCode('')
+  }
+
   const handleItemScan = useCallback((basketId: string, itemId: string, expectedCode: string) => {
     console.log('[Basket] 开始核验，期望编码', { expectedCode })
 
@@ -57,21 +72,12 @@ const BasketPage: React.FC = () => {
         processScanResult(res.result, basketId, itemId, expectedCode)
       },
       fail: () => {
-        Taro.showActionSheet({
-          itemList: materials.slice(0, 10).map(m => `${m.code} - ${m.name}`),
-          success: (sheetRes) => {
-            const picked = materials[sheetRes.tapIndex]
-            if (picked) {
-              processScanResult(picked.code, basketId, itemId, expectedCode)
-            }
-          },
-          fail: () => {
-            console.log('[Basket] 核验取消')
-          }
-        })
+        setManualVerifyItem({ basketId, itemId, expectedCode })
+        setManualCode('')
+        Taro.showToast({ title: '扫码失败，请手动输入编码', icon: 'none' })
       }
     })
-  }, [materials])
+  }, [])
 
   const processScanResult = useCallback((scannedCode: string, basketId: string, itemId: string, expectedCode: string) => {
     const code = scannedCode.trim().toUpperCase()
@@ -105,7 +111,17 @@ const BasketPage: React.FC = () => {
     addScanHistory(material)
     const remainingDays = calculateRemainingDays(material.expireDate)
     const status = getMaterialStatus(remainingDays)
-    updateBasketItemStatus(basketId, itemId, status, remainingDays)
+    incrementBasketItemVerified(basketId, itemId, status, remainingDays)
+
+    const basket = baskets.find(b => b.id === basketId)
+    const item = basket?.items.find(i => i.id === itemId)
+    addFlowRecord(
+      'basket_verify' as FlowType,
+      material.id,
+      1,
+      `核验 ${material.name}（${item ? `${item.verifiedCount + 1}/${item.quantity}` : '1/1'}）`,
+      { basketName: basket?.name, batchNumber: material.batchNumber }
+    )
 
     const statusText = status === 'available' ? '通过' : status === 'warning' ? '临期' : '过期'
     Taro.showToast({
@@ -113,7 +129,7 @@ const BasketPage: React.FC = () => {
       icon: status === 'expired' ? 'error' : 'success'
     })
     console.log('[Basket] 核验通过', { basketId, itemId, code, status })
-  }, [getMaterialByCode, addScanHistory, updateBasketItemStatus])
+  }, [getMaterialByCode, addScanHistory, incrementBasketItemVerified, addFlowRecord, baskets, handleItemScan])
 
   const handleItemCheck = useCallback((basketId: string, itemId: string, checked: boolean) => {
     updateBasketItemChecked(basketId, itemId, checked)
@@ -121,11 +137,12 @@ const BasketPage: React.FC = () => {
   }, [updateBasketItemChecked])
 
   const getProgress = (basket: typeof baskets[0]) => {
-    const checked = basket.items.filter(i => i.checked).length
+    const verified = basket.items.reduce((sum, i) => sum + i.verifiedCount, 0)
+    const total = basket.items.reduce((sum, i) => sum + i.quantity, 0)
     return {
-      checked,
-      total: basket.items.length,
-      percent: basket.items.length > 0 ? Math.round((checked / basket.items.length) * 100) : 0
+      verified,
+      total,
+      percent: total > 0 ? Math.round((verified / total) * 100) : 0
     }
   }
 
@@ -185,7 +202,7 @@ const BasketPage: React.FC = () => {
                     </View>
                     <View className={styles.basketProgress}>
                       <View>
-                        <Text className={styles.progressText}>{progress.checked}/{progress.total}</Text>
+                        <Text className={styles.progressText}>{progress.verified}/{progress.total}</Text>
                         <Text className={styles.progressSub}>已核验</Text>
                       </View>
                       <Text className={styles.arrowIcon}>▼</Text>
@@ -219,6 +236,27 @@ const BasketPage: React.FC = () => {
 
                   {isExpanded && (
                     <View className={styles.itemsSection}>
+                      {manualVerifyItem && manualVerifyItem.basketId === basket.id && (
+                        <View className={styles.manualInputSection}>
+                          <View className={styles.manualInputRow}>
+                            <Input
+                              className={styles.manualCodeInput}
+                              type='text'
+                              placeholder={`输入编码（期望: ${manualVerifyItem.expectedCode}）`}
+                              value={manualCode}
+                              onInput={(e) => setManualCode(e.detail.value)}
+                              onConfirm={handleManualSubmit}
+                              confirmType='done'
+                            />
+                            <View className={styles.manualSubmitBtn} onClick={handleManualSubmit}>
+                              <Text className={styles.manualSubmitText}>确认</Text>
+                            </View>
+                            <View className={styles.manualCancelBtn} onClick={() => { setManualVerifyItem(null); setManualCode('') }}>
+                              <Text className={styles.manualCancelText}>取消</Text>
+                            </View>
+                          </View>
+                        </View>
+                      )}
                       <View className={styles.itemsList}>
                         {basket.items.map(item => (
                           <BasketItemComponent

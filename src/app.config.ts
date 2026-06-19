@@ -4,6 +4,7 @@ export default defineAppConfig({
     'pages/scan/index',
     'pages/basket/index',
     'pages/mine/index',
+    'pages/flow/index',
     'pages/material-detail/index',
     'pages/photo-submit/index',
     'pages/basket-edit/index'

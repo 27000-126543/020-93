@@ -15,6 +15,7 @@ function createBasketItem(material: Material, quantity: number, checked: boolean
     category: material.category,
     categoryName: categoryNames[material.category],
     quantity,
+    verifiedCount: 0,
     checked,
     status,
     remainingDays,

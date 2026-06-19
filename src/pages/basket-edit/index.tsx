@@ -182,11 +182,14 @@ const BasketEditPage: React.FC = () => {
                   isSelected && styles.selectedRow,
                   outOfStock && styles.outOfStockRow
                 )}
-                onClick={() => !outOfStock && toggleMaterial(m.id)}
+                onClick={() => {
+                  if (outOfStock && !isSelected) return
+                  toggleMaterial(m.id)
+                }}
               >
                 <View className={classnames(
                   styles.materialCheck,
-                  outOfStock && styles.checkDisabled
+                  outOfStock && !isSelected && styles.checkDisabled
                 )}>
                   {isSelected && <Text className={styles.checkIcon}>✓</Text>}
                 </View>

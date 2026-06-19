@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import type { Schedule, Material, Basket, BasketItem, TreatmentType, SubmissionStatus } from '@/types'
+import type { Schedule, Material, Basket, BasketItem, TreatmentType, SubmissionStatus, FlowRecord, FlowType } from '@/types'
 import { treatmentNames, categoryNames, submissionStatusNames } from '@/types'
 import { mockMaterials } from '@/data/materials'
 import { mockBaskets } from '@/data/baskets'
@@ -15,6 +15,13 @@ interface PhotoSubmission {
   status: SubmissionStatus
   handleRemark: string
   handledAt?: string
+  replenishedQty: number
+  replenishedAt?: string
+}
+
+function nowStr(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 }
 
 interface AppState {
@@ -23,6 +30,7 @@ interface AppState {
   baskets: Basket[]
   scanHistory: Material[]
   submissions: PhotoSubmission[]
+  flowRecords: FlowRecord[]
   setCurrentRoom: (room: Schedule | null) => void
   getMaterialByCode: (code: string) => Material | undefined
   getMaterialById: (id: string) => Material | undefined
@@ -31,13 +39,16 @@ interface AppState {
   useMaterialQuantity: (materialId: string, quantity: number) => boolean
   addSubmission: (material: Material, batchNumber: string, photos: string[], remark: string) => void
   updateSubmissionStatus: (id: string, status: SubmissionStatus, handleRemark?: string) => void
+  replenishMaterial: (submissionId: string, quantity: number) => void
   updateBasketItemChecked: (basketId: string, itemId: string, checked: boolean) => void
+  incrementBasketItemVerified: (basketId: string, itemId: string, status: Material['status'], remainingDays: number) => void
   updateBasketItemStatus: (basketId: string, itemId: string, status: Material['status'], remainingDays: number) => void
   addBasket: (name: string, treatmentType: TreatmentType, roomNumber: string, materialIds: string[]) => void
   updateBasket: (basketId: string, name: string, treatmentType: TreatmentType, roomNumber: string, materialIds: string[]) => void
   getBasketById: (id: string) => Basket | undefined
   getAllBaskets: () => Basket[]
   getBasketsByTreatmentType: (type: TreatmentType) => Basket[]
+  addFlowRecord: (type: FlowType, materialId: string, quantity: number, remark: string, extra?: Partial<Pick<FlowRecord, 'basketName' | 'batchNumber' | 'operator'>>) => void
 }
 
 const AppContext = createContext<AppState | undefined>(undefined)
@@ -56,6 +67,7 @@ function buildBasketItems(basketId: string, materialIds: string[], materials: Ma
       category: mat?.category || 'adhesive',
       categoryName: mat?.categoryName || categoryNames['adhesive'],
       quantity: 1,
+      verifiedCount: 0,
       checked: false,
       status,
       remainingDays,
@@ -70,9 +82,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [baskets, setBaskets] = useState<Basket[]>(() => [...mockBaskets])
   const [scanHistory, setScanHistory] = useState<Material[]>([])
   const [submissions, setSubmissions] = useState<PhotoSubmission[]>([])
+  const [flowRecords, setFlowRecords] = useState<FlowRecord[]>([])
 
   const getMaterialByCode = useCallback((code: string) => {
-    return materials.find(m => m.code === code)
+    return materials.find(m => m.code.toUpperCase() === code.toUpperCase())
   }, [materials])
 
   const getMaterialById = useCallback((id: string) => {
@@ -90,6 +103,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const addFlowRecord = useCallback((type: FlowType, materialId: string, quantity: number, remark: string, extra?: Partial<Pick<FlowRecord, 'basketName' | 'batchNumber' | 'operator'>>) => {
+    const mat = materials.find(m => m.id === materialId)
+    const record: FlowRecord = {
+      id: `flow-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type,
+      materialId,
+      materialName: mat?.name || materialId,
+      materialCode: mat?.code || '',
+      quantity,
+      remark,
+      createdAt: nowStr(),
+      basketName: extra?.basketName,
+      batchNumber: extra?.batchNumber,
+      operator: extra?.operator
+    }
+    setFlowRecords(prev => [record, ...prev])
+  }, [materials])
+
   const useMaterialQuantity = useCallback((materialId: string, quantity: number): boolean => {
     let success = false
     setMaterials(prev => {
@@ -102,35 +133,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return m
       })
     })
-    console.log('[Inventory] 扣减材料', { materialId, quantity, success })
+    if (success) {
+      const mat = materials.find(m => m.id === materialId)
+      addFlowRecord('scan_use', materialId, quantity, `扫码扣减 ${quantity} 件`)
+    }
     return success
-  }, [])
+  }, [materials, addFlowRecord])
 
   const addSubmission = useCallback((material: Material, batchNumber: string, photos: string[], remark: string) => {
-    const now = new Date()
-    const submittedAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
     const submission: PhotoSubmission = {
       id: `sub-${Date.now()}`,
       material,
       batchNumber,
       photos,
       remark,
-      submittedAt,
+      submittedAt: nowStr(),
       status: 'pending',
-      handleRemark: ''
+      handleRemark: '',
+      replenishedQty: 0
     }
     setSubmissions(prev => [submission, ...prev])
-    console.log('[Submission] 新增提交', { materialName: material.name, batchNumber, photoCount: photos.length, id: submission.id })
-  }, [])
+    addFlowRecord('expired_submit', material.id, 1, `过期提交，批号${batchNumber}`, { batchNumber })
+  }, [addFlowRecord])
 
   const updateSubmissionStatus = useCallback((id: string, status: SubmissionStatus, handleRemark: string = '') => {
-    const now = new Date()
-    const handledAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-    setSubmissions(prev => prev.map(s =>
-      s.id === id ? { ...s, status, handleRemark, handledAt } : s
-    ))
-    console.log('[Submission] 更新状态', { id, status: submissionStatusNames[status] })
-  }, [])
+    setSubmissions(prev => prev.map(s => {
+      if (s.id !== id) return s
+      return { ...s, status, handleRemark, handledAt: nowStr() }
+    }))
+    const sub = submissions.find(s => s.id === id)
+    if (sub) {
+      addFlowRecord('warehouse_process', sub.material.id, 1, `${submissionStatusNames[status]}：${handleRemark}`, { batchNumber: sub.batchNumber })
+    }
+  }, [submissions, addFlowRecord])
+
+  const replenishMaterial = useCallback((submissionId: string, quantity: number) => {
+    setMaterials(prev => prev.map(m => {
+      const sub = submissions.find(s => s.id === submissionId)
+      if (sub && m.id === sub.material.id) {
+        return { ...m, quantity: m.quantity + quantity }
+      }
+      return m
+    }))
+    setSubmissions(prev => prev.map(s => {
+      if (s.id !== submissionId) return s
+      return { ...s, replenishedQty: s.replenishedQty + quantity, replenishedAt: nowStr() }
+    }))
+    const sub = submissions.find(s => s.id === submissionId)
+    if (sub) {
+      addFlowRecord('replenish', sub.material.id, quantity, `补库入库 ${quantity} 件`, { batchNumber: sub.batchNumber })
+    }
+  }, [submissions, addFlowRecord])
 
   const updateBasketItemChecked = useCallback((basketId: string, itemId: string, checked: boolean) => {
     setBaskets(prev => prev.map(b => {
@@ -144,14 +197,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const incrementBasketItemVerified = useCallback((basketId: string, itemId: string, status: Material['status'], remainingDays: number) => {
+    setBaskets(prev => prev.map(b => {
+      if (b.id !== basketId) return b
+      return {
+        ...b,
+        items: b.items.map(item => {
+          if (item.id !== itemId) return item
+          const newVerified = item.verifiedCount + 1
+          const done = newVerified >= item.quantity
+          return { ...item, verifiedCount: newVerified, checked: done, status, remainingDays }
+        })
+      }
+    }))
+  }, [])
+
   const updateBasketItemStatus = useCallback((basketId: string, itemId: string, status: Material['status'], remainingDays: number) => {
     setBaskets(prev => prev.map(b => {
       if (b.id !== basketId) return b
       return {
         ...b,
-        items: b.items.map(item =>
-          item.id === itemId ? { ...item, status, remainingDays, checked: true } : item
-        )
+        items: b.items.map(item => {
+          if (item.id !== itemId) return item
+          const newVerified = item.verifiedCount + 1
+          const done = newVerified >= item.quantity
+          return { ...item, status, remainingDays, verifiedCount: newVerified, checked: done }
+        })
       }
     }))
   }, [])
@@ -159,8 +230,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addBasket = useCallback((name: string, treatmentType: TreatmentType, roomNumber: string, materialIds: string[]) => {
     const newId = `basket-${Date.now()}`
     const items = buildBasketItems(newId, materialIds, materials)
-    const now = new Date()
-    const createdAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
     const newBasket: Basket = {
       id: newId,
       name,
@@ -168,10 +237,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       treatmentName: treatmentNames[treatmentType],
       roomNumber,
       items,
-      createdAt
+      createdAt: nowStr()
     }
     setBaskets(prev => [newBasket, ...prev])
-    console.log('[Basket] 新建材料篮', { id: newId, name, treatmentType, roomNumber, itemCount: items.length })
   }, [materials])
 
   const updateBasket = useCallback((basketId: string, name: string, treatmentType: TreatmentType, roomNumber: string, materialIds: string[]) => {
@@ -187,7 +255,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         items
       }
     }))
-    console.log('[Basket] 更新材料篮', { id: basketId, name, treatmentType, roomNumber, itemCount: items.length })
   }, [materials])
 
   const getBasketById = useCallback((id: string) => baskets.find(b => b.id === id), [baskets])
@@ -201,6 +268,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       baskets,
       scanHistory,
       submissions,
+      flowRecords,
       setCurrentRoom,
       getMaterialByCode,
       getMaterialById,
@@ -209,13 +277,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       useMaterialQuantity,
       addSubmission,
       updateSubmissionStatus,
+      replenishMaterial,
       updateBasketItemChecked,
+      incrementBasketItemVerified,
       updateBasketItemStatus,
       addBasket,
       updateBasket,
       getBasketById,
       getAllBaskets,
-      getBasketsByTreatmentType
+      getBasketsByTreatmentType,
+      addFlowRecord
     }}>
       {children}
     </AppContext.Provider>

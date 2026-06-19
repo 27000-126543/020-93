@@ -21,6 +21,8 @@ const BasketItemComponent: React.FC<BasketItemProps> = ({
   const hasStatus = item.status !== undefined
   const statusColor = hasStatus ? statusColors[item.status!] : '#86909c'
   const outOfStock = typeof stockQuantity === 'number' && stockQuantity <= 0
+  const isComplete = item.verifiedCount >= item.quantity
+  const remaining = item.quantity - item.verifiedCount
 
   const handleCheck = () => {
     onCheck?.(!item.checked)
@@ -29,14 +31,14 @@ const BasketItemComponent: React.FC<BasketItemProps> = ({
   return (
     <View className={classnames(
       styles.card,
-      item.checked && styles.checked,
-      outOfStock && styles.outOfStock
+      isComplete && styles.checked,
+      outOfStock && !isComplete && styles.outOfStock
     )}>
       <View
         className={styles.checkbox}
         onClick={handleCheck}
       >
-        {item.checked && <Text className={styles.checkIcon}>✓</Text>}
+        {isComplete && <Text className={styles.checkIcon}>✓</Text>}
       </View>
 
       <View className={styles.content}>
@@ -50,9 +52,14 @@ const BasketItemComponent: React.FC<BasketItemProps> = ({
               {statusNames[item.status!]}
             </View>
           )}
-          {outOfStock && !hasStatus && (
+          {outOfStock && !isComplete && (
             <View className={classnames(styles.statusTag, styles.noStockTag)}>
               无库存
+            </View>
+          )}
+          {isComplete && (
+            <View className={classnames(styles.statusTag, styles.completeTag)}>
+              已完成
             </View>
           )}
         </View>
@@ -60,7 +67,29 @@ const BasketItemComponent: React.FC<BasketItemProps> = ({
         <View className={styles.meta}>
           <Text className={styles.category}>{item.categoryName}</Text>
           <Text className={styles.code}>编码：{item.materialCode}</Text>
-          <Text className={styles.quantity}>× {item.quantity}</Text>
+        </View>
+
+        <View className={styles.verifyRow}>
+          <Text className={styles.verifyLabel}>核验进度</Text>
+          <Text className={classnames(
+            styles.verifyCount,
+            isComplete && styles.verifyComplete
+          )}>
+            {item.verifiedCount}/{item.quantity}
+          </Text>
+          {!isComplete && remaining > 0 && (
+            <Text className={styles.verifyRemaining}>还差 {remaining}</Text>
+          )}
+        </View>
+
+        <View className={styles.verifyBar}>
+          <View
+            className={classnames(
+              styles.verifyFill,
+              isComplete && styles.verifyFillComplete
+            )}
+            style={{ width: `${item.quantity > 0 ? Math.round((item.verifiedCount / item.quantity) * 100) : 0}%` }}
+          />
         </View>
 
         <View className={styles.stockRow}>
@@ -95,8 +124,8 @@ const BasketItemComponent: React.FC<BasketItemProps> = ({
       <View
         className={classnames(
           styles.scanBtn,
-          item.checked && styles.disabled,
-          outOfStock && !item.checked && styles.outOfStockBtn
+          isComplete && styles.disabled,
+          outOfStock && !isComplete && styles.outOfStockBtn
         )}
         onClick={(e) => {
           e.stopPropagation()
@@ -104,7 +133,7 @@ const BasketItemComponent: React.FC<BasketItemProps> = ({
         }}
       >
         <Text className={styles.scanText}>
-          {outOfStock && !item.checked ? '补库' : (hasStatus ? '重扫' : '扫码')}
+          {isComplete ? '已完' : (outOfStock ? '补库' : (item.verifiedCount > 0 ? '续扫' : '扫码'))}
         </Text>
       </View>
     </View>
