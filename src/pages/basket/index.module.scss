@@ -1,0 +1,258 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.tabBar {
+  display: flex;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  gap: $spacing-sm;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.tabItem {
+  flex: 1;
+  height: $button-height-sm;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-bg-page;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.tabText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+
+  .active & {
+    color: $color-text-white;
+  }
+}
+
+.content {
+  padding: $spacing-md $page-padding;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  background: $color-bg-card;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.basketList {
+  display: flex;
+  flex-direction: column;
+}
+
+.basketCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  border-left: 8rpx solid $color-primary;
+  transition: all $transition-base;
+  position: relative;
+  overflow: hidden;
+
+  &.implant {
+    border-left-color: #1677ff;
+  }
+
+  &.restoration {
+    border-left-color: #722ed1;
+  }
+
+  &.orthodontics {
+    border-left-color: #13c2c2;
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &.expanded {
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.basketHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.basketInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.basketName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.basketMeta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-top: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.basketRoom {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  background: $color-bg-light-blue;
+  padding: 2rpx $spacing-sm;
+  border-radius: $radius-xs;
+}
+
+.basketTime {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.basketProgress {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-left: $spacing-md;
+}
+
+.progressText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.progressSub {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.arrowIcon {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  transition: transform $transition-base;
+
+  .expanded & {
+    transform: rotate(180deg);
+  }
+}
+
+.itemsSection {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.progressBar {
+  height: 8rpx;
+  background: $color-bg-page;
+  border-radius: $radius-round;
+  margin-top: $spacing-md;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-round;
+  transition: width 0.3s ease;
+}
+
+.emptyState {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xxl $spacing-lg;
+  text-align: center;
+  box-shadow: $shadow-card;
+}
+
+.emptyIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.4;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-lg;
+}
+
+.createBtn {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 0 $spacing-lg;
+  height: $button-height-md;
+  background: $color-primary;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.createBtnText {
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+}

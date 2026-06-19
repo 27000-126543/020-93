@@ -1,0 +1,163 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+}
+
+.statusSection {
+  display: flex;
+  align-items: center;
+  padding: $spacing-xl $spacing-lg;
+  position: relative;
+}
+
+.bgAvailable {
+  background: linear-gradient(135deg, #e8ffea 0%, #d1fae5 100%);
+}
+
+.bgWarning {
+  background: linear-gradient(135deg, #fff7e6 0%, #ffedd5 100%);
+}
+
+.bgExpired {
+  background: linear-gradient(135deg, #ffece8 0%, #fee2e2 100%);
+}
+
+.statusIcon {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: $radius-round;
+  background: $color-bg-card;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64rpx;
+  font-weight: $font-weight-bold;
+  margin-right: $spacing-lg;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.textAvailable {
+  color: $color-status-available;
+}
+
+.textWarning {
+  color: $color-status-warning;
+}
+
+.textExpired {
+  color: $color-status-expired;
+}
+
+.statusInfo {
+  flex: 1;
+}
+
+.statusTitle {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  display: block;
+  line-height: 1.2;
+}
+
+.daysLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-top: $spacing-xs;
+}
+
+.daysNumber {
+  font-size: 96rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  display: block;
+  margin-top: $spacing-xs;
+  letter-spacing: -2rpx;
+}
+
+.tagAvailable {
+  background: $color-tag-available-bg;
+  color: $color-status-available;
+}
+
+.tagWarning {
+  background: $color-tag-warning-bg;
+  color: $color-status-warning;
+}
+
+.tagExpired {
+  background: $color-tag-expired-bg;
+  color: $color-status-expired;
+}
+
+.infoSection {
+  padding: $spacing-lg;
+}
+
+.materialName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-md;
+  @include text-ellipsis;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.infoLabel {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.infoValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.actionSection {
+  padding: 0 $spacing-lg $spacing-lg;
+}
+
+.actionBtn {
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.btnUse {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+}
+
+.btnReport {
+  background: linear-gradient(135deg, $color-status-expired 0%, #ff6b6b 100%);
+}
+
+.btnText {
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+}

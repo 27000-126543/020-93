@@ -1,0 +1,265 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.roomBar {
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.roomLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.roomValue {
+  font-size: $font-size-md;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.noRoom {
+  font-size: $font-size-sm;
+  color: $color-text-disabled;
+}
+
+.scanSection {
+  padding: $spacing-xl $page-padding;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scanArea {
+  width: 500rpx;
+  height: 500rpx;
+  border: 4rpx dashed $color-primary;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: $spacing-xl;
+  background: linear-gradient(135deg, #e6f4ff 0%, #f0f7ff 100%);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4rpx;
+    background: linear-gradient(90deg, transparent, $color-primary, transparent);
+    animation: scanLine 2s ease-in-out infinite;
+  }
+}
+
+@keyframes scanLine {
+  0% {
+    top: 0;
+  }
+  50% {
+    top: calc(100% - 4rpx);
+  }
+  100% {
+    top: 0;
+  }
+}
+
+.scanIcon {
+  font-size: 120rpx;
+  opacity: 0.6;
+}
+
+.scanHint {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  text-align: center;
+  margin-bottom: $spacing-xl;
+}
+
+.scanBtn {
+  @include button-reset;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: $radius-round;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 32rpx rgba($color-primary, 0.4);
+  transition: all $transition-base;
+  margin-bottom: $spacing-lg;
+
+  &:active {
+    transform: scale(0.92);
+    box-shadow: 0 4rpx 16rpx rgba($color-primary, 0.3);
+  }
+}
+
+.scanBtnIcon {
+  font-size: 64rpx;
+  color: $color-text-white;
+}
+
+.scanBtnText {
+  font-size: $font-size-md;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
+.manualInput {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  border: 1rpx solid $color-border;
+  transition: all $transition-base;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.manualIcon {
+  font-size: $font-size-lg;
+}
+
+.manualText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.resultSection {
+  padding: 0 $page-padding $spacing-lg;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.historySection {
+  padding: 0 $page-padding;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.historyTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.historyCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  background: $color-bg-card;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+}
+
+.historyItem {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md $spacing-lg;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.historyInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.historyName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.historyMeta {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.historyStatus {
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  margin-left: $spacing-md;
+
+  &.available {
+    background: $color-tag-available-bg;
+    color: $color-status-available;
+  }
+
+  &.warning {
+    background: $color-tag-warning-bg;
+    color: $color-status-warning;
+  }
+
+  &.expired {
+    background: $color-tag-expired-bg;
+    color: $color-status-expired;
+  }
+}
+
+.emptyHistory {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xxl $spacing-lg;
+  text-align: center;
+  box-shadow: $shadow-card;
+}
+
+.emptyIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.4;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
