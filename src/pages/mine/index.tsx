@@ -17,7 +17,7 @@ const MinePage: React.FC = () => {
   const stats = {
     todayScanned: scanHistory.length,
     monthSubmissions: submissions.length,
-    pending: submissions.filter(s => true).length
+    pending: submissions.length
   }
 
   const handleMenuClick = (text: string) => {
@@ -29,9 +29,11 @@ const MinePage: React.FC = () => {
   }
 
   const handleSubmissionClick = (item: typeof submissions[0]) => {
-    console.log('[Mine] 点击提交记录', { item })
-    Taro.navigateTo({
-      url: '/pages/photo-submit/index'
+    Taro.showModal({
+      title: item.material.name,
+      content: `批号：${item.batchNumber}\n照片数量：${item.photos.length}张\n备注：${item.remark || '无'}\n提交时间：${item.submittedAt}`,
+      showCancel: false,
+      confirmText: '知道了'
     })
   }
 
@@ -72,7 +74,7 @@ const MinePage: React.FC = () => {
 
           {submissions.length > 0 ? (
             <View className={styles.submissionsList}>
-              {submissions.slice(0, 3).map((item, index) => (
+              {submissions.map((item, index) => (
                 <View
                   key={index}
                   className={styles.submissionItem}
@@ -83,8 +85,9 @@ const MinePage: React.FC = () => {
                     <View className={styles.submissionStatus}>处理中</View>
                   </View>
                   <View className={styles.submissionMeta}>
-                    <Text className={styles.submissionBatch}>批号：{item.material.batchNumber}</Text>
-                    <Text className={styles.submissionTime}>提交于 {new Date().toLocaleDateString()}</Text>
+                    <Text className={styles.submissionBatch}>批号：{item.batchNumber}</Text>
+                    <Text className={styles.submissionPhotos}>📷 {item.photos.length}张</Text>
+                    <Text className={styles.submissionTime}>{item.submittedAt}</Text>
                   </View>
                 </View>
               ))}

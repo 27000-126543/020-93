@@ -5,15 +5,14 @@ import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useAppContext } from '@/store/app.context'
 import { getTodaySchedules } from '@/data/schedules'
-import { getMaterialsByStatus } from '@/data/materials'
 import { getTodayDisplay } from '@/utils/date'
 import ScheduleCard from '@/components/ScheduleCard'
 
 const HomePage: React.FC = () => {
-  const { currentRoom, setCurrentRoom } = useAppContext()
+  const { currentRoom, setCurrentRoom, getMaterialsByStatus } = useAppContext()
   const schedules = useMemo(() => getTodaySchedules(), [])
-  const warningMaterials = useMemo(() => getMaterialsByStatus('warning'), [])
-  const expiredMaterials = useMemo(() => getMaterialsByStatus('expired'), [])
+  const warningMaterials = useMemo(() => getMaterialsByStatus('warning'), [getMaterialsByStatus])
+  const expiredMaterials = useMemo(() => getMaterialsByStatus('expired'), [getMaterialsByStatus])
 
   const handleScheduleSelect = (schedule: typeof schedules[0]) => {
     setCurrentRoom(schedule)

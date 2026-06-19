@@ -256,3 +256,31 @@
   font-size: $font-size-md;
   font-weight: $font-weight-medium;
 }
+
+.floatingBtn {
+  @include button-reset;
+  position: fixed;
+  right: $spacing-lg;
+  bottom: 180rpx;
+  height: $button-height-md;
+  padding: 0 $spacing-xl;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba($color-primary, 0.4);
+  z-index: 10;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+}
+
+.floatingBtnText {
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+}

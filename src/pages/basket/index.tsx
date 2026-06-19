@@ -1,13 +1,12 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useAppContext } from '@/store/app.context'
-import { getAllBaskets, getBasketsByTreatmentType } from '@/data/baskets'
-import { getMaterialByCode } from '@/data/materials'
-import type { TreatmentType, Basket } from '@/types'
+import type { TreatmentType } from '@/types'
 import { treatmentNames } from '@/types'
+import { calculateRemainingDays, getMaterialStatus } from '@/utils/date'
 import BasketItemComponent from '@/components/BasketItem'
 
 const treatmentTabs: { key: TreatmentType | 'all'; label: string }[] = [
@@ -18,72 +17,63 @@ const treatmentTabs: { key: TreatmentType | 'all'; label: string }[] = [
 ]
 
 const BasketPage: React.FC = () => {
-  const { selectedBasket, setSelectedBasket, updateBasketItemChecked, addScanHistory } = useAppContext()
+  const {
+    baskets,
+    materials,
+    updateBasketItemChecked,
+    updateBasketItemStatus,
+    addScanHistory
+  } = useAppContext()
+
   const [activeTab, setActiveTab] = useState<TreatmentType | 'all'>('all')
   const [expandedBasketId, setExpandedBasketId] = useState<string | null>(null)
 
-  const baskets = useMemo(() => {
-    if (activeTab === 'all') {
-      return getAllBaskets()
-    }
-    return getBasketsByTreatmentType(activeTab)
-  }, [activeTab])
+  const filteredBaskets = activeTab === 'all'
+    ? baskets
+    : baskets.filter(b => b.treatmentType === activeTab)
 
   const handleTabChange = (key: TreatmentType | 'all') => {
     setActiveTab(key)
-    setExpandedBasketId(null)
     console.log('[Basket] 切换治疗类型', { type: key })
   }
 
-  const handleBasketClick = (basket: Basket) => {
-    if (expandedBasketId === basket.id) {
-      setExpandedBasketId(null)
-      setSelectedBasket(null)
-    } else {
-      setExpandedBasketId(basket.id)
-      setSelectedBasket(basket)
-    }
+  const handleBasketClick = (basketId: string) => {
+    setExpandedBasketId(prev => prev === basketId ? null : basketId)
   }
 
   const handleItemScan = useCallback((basketId: string, itemId: string, materialCode: string) => {
-    const material = getMaterialByCode(materialCode)
+    const material = materials.find(m => m.code === materialCode)
     if (material) {
       addScanHistory(material)
-      updateBasketItemChecked(itemId, true)
+      const remainingDays = calculateRemainingDays(material.expireDate)
+      const status = getMaterialStatus(remainingDays)
+      updateBasketItemStatus(basketId, itemId, status, remainingDays)
       Taro.showToast({
-        title: `核验${material.status === 'available' ? '通过' : material.status === 'warning' ? '临期' : '过期'}`,
-        icon: material.status === 'expired' ? 'error' : 'success'
+        title: `核验${status === 'available' ? '通过' : status === 'warning' ? '临期' : '过期'}`,
+        icon: status === 'expired' ? 'error' : 'success'
       })
-      console.log('[Basket] 扫码核验', { basketId, itemId, material })
+      console.log('[Basket] 扫码核验', { basketId, itemId, materialCode, status })
     } else {
-      Taro.showToast({
-        title: '未找到该材料',
-        icon: 'error'
-      })
-      console.error('[Basket] 未找到材料', { materialCode })
+      Taro.showToast({ title: '未找到该材料', icon: 'error' })
     }
-  }, [addScanHistory, updateBasketItemChecked])
+  }, [materials, addScanHistory, updateBasketItemStatus])
 
-  const handleItemCheck = useCallback((itemId: string, checked: boolean) => {
-    updateBasketItemChecked(itemId, checked)
-    console.log('[Basket] 勾选状态变更', { itemId, checked })
+  const handleItemCheck = useCallback((basketId: string, itemId: string, checked: boolean) => {
+    updateBasketItemChecked(basketId, itemId, checked)
+    console.log('[Basket] 勾选状态变更', { basketId, itemId, checked })
   }, [updateBasketItemChecked])
 
-  const getProgress = (basket: Basket) => {
+  const getProgress = (basket: typeof baskets[0]) => {
     const checked = basket.items.filter(i => i.checked).length
     return {
       checked,
       total: basket.items.length,
-      percent: Math.round((checked / basket.items.length) * 100)
+      percent: basket.items.length > 0 ? Math.round((checked / basket.items.length) * 100) : 0
     }
   }
 
   const handleCreateBasket = () => {
-    Taro.showToast({
-      title: '功能开发中',
-      icon: 'none'
-    })
-    console.log('[Basket] 点击创建材料篮')
+    Taro.navigateTo({ url: '/pages/basket-edit/index' })
   }
 
   return (
@@ -103,12 +93,12 @@ const BasketPage: React.FC = () => {
       <View className={styles.content}>
         <View className={styles.sectionHeader}>
           <Text className={styles.sectionTitle}>备台清单</Text>
-          <Text className={styles.sectionCount}>共 {baskets.length} 个</Text>
+          <Text className={styles.sectionCount}>共 {filteredBaskets.length} 个</Text>
         </View>
 
-        {baskets.length > 0 ? (
+        {filteredBaskets.length > 0 ? (
           <View className={styles.basketList}>
-            {baskets.map(basket => {
+            {filteredBaskets.map(basket => {
               const progress = getProgress(basket)
               const isExpanded = expandedBasketId === basket.id
               return (
@@ -122,7 +112,7 @@ const BasketPage: React.FC = () => {
                 >
                   <View
                     className={styles.basketHeader}
-                    onClick={() => handleBasketClick(basket)}
+                    onClick={() => handleBasketClick(basket.id)}
                   >
                     <View className={styles.basketInfo}>
                       <Text className={styles.basketName}>{basket.name}</Text>
@@ -156,7 +146,7 @@ const BasketPage: React.FC = () => {
                           <BasketItemComponent
                             key={item.id}
                             item={item}
-                            onCheck={(checked) => handleItemCheck(item.id, checked)}
+                            onCheck={(checked) => handleItemCheck(basket.id, item.id, checked)}
                             onScan={() => handleItemScan(basket.id, item.id, item.materialCode)}
                           />
                         ))}
@@ -176,6 +166,10 @@ const BasketPage: React.FC = () => {
             </View>
           </View>
         )}
+
+        <View className={styles.floatingBtn} onClick={handleCreateBasket}>
+          <Text className={styles.floatingBtnText}>+ 新建</Text>
+        </View>
       </View>
     </ScrollView>
   )
